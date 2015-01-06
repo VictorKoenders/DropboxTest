@@ -1,0 +1,58 @@
+﻿@model dynamic
+
+@{
+	ViewBag.Title = "title";
+}
+
+<script type="text/javascript">
+	$.get('/DropBox/IsAuthed', function(data) {
+		if (data) {
+			loadTree($('#treeview').show());
+		} else {
+			$('button').show().click(function () {
+				console.log('click');
+				window.open('/DropBox/', 'Connect to dropbox', 'height=400,width=400');
+			});
+		}
+	});
+	function AfterAuth(type, isSuccess)
+	{
+		if (isSuccess) {
+			loadTree($('#treeview').show());
+			$('button').hide();
+		} else {
+			$('#treeview').hide();
+			$('button').show();
+		}
+	}
+</script>
+<button type="button" style="display: none">Connect to dropbox</button>
+<ul id="treeview" style="display:none"></ul>
+<script type="text/javascript">
+	function loadTree(element) {
+		var dir = element.data('dir') || '';
+		$.get("/DropBox/Load?folder=" + encodeURIComponent(dir), function (data) {
+			if (data.Error) {
+				AfterAuth('Dropbox', false);
+				return;
+			}
+			for (var i = 0; i < data.Folders.length; i++) {
+				element.append($('<li />').append('<a href="#" onclick="toggle(this); return false;">' + data.Folders[i] + '</a>').append($('<ul />').data('dir', dir + '/' + data.Folders[i])));
+			}
+			for (var i = 0; i < data.Files.length; i++) {
+				element.append($('<li />').html(data.Files[i]));
+			}
+			if (data.Folders.length == 0 && data.Files.length == 0) {
+				element.append($('<li />').html('<i>No files</i>'));
+			}
+		});
+	}
+	function toggle(element) {
+		var next = $(element).next();
+		if (next.children().length == 0) {
+			loadTree(next);
+		} else {
+			next.toggle();
+		}
+	}
+</script>
